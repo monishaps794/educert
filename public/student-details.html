@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Details</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Student Details</h1>
+  </header>
+
+  <div class="container">
+    <form id="details-form">
+      <label>Email</label>
+      <input type="email" id="email" required />
+
+      <label>Branch</label>
+      <input type="text" id="branch" required />
+
+      <label>Year of Passing</label>
+      <input type="number" id="year" required />
+
+      <label>Address</label>
+      <textarea id="address" required></textarea>
+
+      <button type="submit">Save & Continue</button>
+    </form>
+
+    <div id="details-message"></div>
+  </div>
+
+  <script src="student-details.js"></script>
+</body>
+</html>

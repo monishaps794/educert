@@ -1,0 +1,65 @@
+<!-- student.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student - Certificate Application</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Student Certificate Application</h1>
+  </header>
+
+  <div class="container">
+    <!-- Login Section -->
+    <div id="login-section">
+      <h2>Student Login</h2>
+      <p>Enter your basic details to continue.</p>
+
+      <form id="login-form">
+        <label>Name</label>
+        <input type="text" id="name" required placeholder="Enter your full name" />
+
+        <label>USN</label>
+        <input type="text" id="usn" required placeholder="Enter your USN" />
+
+        <label>Date of Birth</label>
+        <input type="date" id="dob" required />
+
+        <button type="submit">Continue</button>
+      </form>
+
+      <div id="login-message"></div>
+    </div>
+
+    <!-- Application Section -->
+    <div id="application-section" class="hidden">
+      <h2>Apply for Certificates</h2>
+      <p id="welcome-text"></p>
+
+      <form id="application-form">
+        <label>Choose Certificate Type</label>
+        <select id="certificate-type" required></select>
+
+        <label>Copy Type</label>
+        <select id="copy-type" required>
+          <option value="">Select copy type</option>
+          <option value="Hardcopy">Hardcopy</option>
+          <option value="Softcopy">Softcopy</option>
+          <option value="Both">Both (Hardcopy + Softcopy)</option>
+        </select>
+
+        <label>Email (optional)</label>
+        <input type="email" id="student-email" />
+
+        <button type="submit">Proceed & Pay</button>
+      </form>
+
+      <div id="application-message"></div>
+    </div>
+  </div>
+
+  <script src="student.js"></script>
+</body>
+</html>

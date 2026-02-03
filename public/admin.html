@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin - Certificate Applications</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Admin Dashboard - Certificate Applications</h1>
+  </header>
+
+  <div class="container">
+    <!-- Admin Login -->
+    <div id="admin-login-section">
+      <h2>Admin Login</h2>
+      <p>Enter your admin credentials to continue.</p>
+      <form id="admin-login-form">
+        <label>Username</label>
+        <input type="text" id="admin-username" required />
+
+        <label>Password</label>
+        <input type="password" id="admin-password" required />
+
+        <button type="submit">Login</button>
+      </form>
+      <div id="admin-login-message"></div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="hidden">
+      <h2>Applications</h2>
+      <p>
+        <a href="status.html" class="link-btn">Go to Status Tracking Page</a>
+      </p>
+      <button id="refresh-btn">Refresh List</button>
+      <div id="admin-message"></div>
+
+      <div class="table-wrapper">
+        <table id="applications-table">
+          <thead>
+            <tr>
+            <th>ID</th>
+            <th>USN</th>
+            <th>Certificate</th>
+            <th>Copy Type</th>
+            <th>Email</th>
+            <th>Address</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Uploaded Doc</th>
+            <th>Action</th>
+          </tr>
+
+          </thead>
+          <tbody>
+            <!-- Filled dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

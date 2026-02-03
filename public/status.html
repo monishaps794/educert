@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Track Application Status</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Track Certificate Application Status</h1>
+  </header>
+
+  <div class="container">
+    <h2>Enter Your Application ID</h2>
+    <p>
+      You can find your Application ID in the success message after submitting
+      your certificate request.
+    </p>
+
+    <form id="status-form">
+      <label>Application ID</label>
+      <input type="number" id="application-id" required placeholder="Enter Application ID" />
+      <button type="submit">Check Status</button>
+    </form>
+
+    <div id="status-message"></div>
+
+    <div id="status-result" class="hidden">
+      <h3>Application Details</h3>
+      <div id="status-details"></div>
+    </div>
+  </div>
+
+  <script src="status.js"></script>
+</body>
+</html>
