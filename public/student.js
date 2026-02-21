@@ -1,144 +1,140 @@
-// student.js
 const API_BASE = "";
 
 const loginSection = document.getElementById("login-section");
 const applicationSection = document.getElementById("application-section");
 const welcomeText = document.getElementById("welcome-text");
 
-const loginForm = document.getElementById("login-form");
+const certificateSelect = document.getElementById("certificate-type");
+const otherFields = document.getElementById("other-fields");
+
+const emailInput = document.getElementById("login-email");
+const otpBox = document.getElementById("otp-box");
+const otpInput = document.getElementById("otp");
+const sendOtpBtn = document.getElementById("send-otp-btn");
 const loginMessage = document.getElementById("login-message");
 
-const certificateSelect = document.getElementById("certificate-type");
-const applicationForm = document.getElementById("application-form");
-const applicationMessage = document.getElementById("application-message");
-
-// ================= PAGE LOAD FLOW CONTROL =================
-const usn = localStorage.getItem("usn");
-const name = localStorage.getItem("name");
+/* ======================================================
+   ✅ OPEN CERTIFICATE PAGE ONLY AFTER DETAILS PAGE
+====================================================== */
+const email = localStorage.getItem("email");
+const otpVerified = localStorage.getItem("otpVerified");
 const detailsCompleted = localStorage.getItem("detailsCompleted");
 const fromDetails = sessionStorage.getItem("fromDetails");
 
-// ✅ Details completed → show application page
-if (usn && name && detailsCompleted === "true" && fromDetails === "true") {
-  sessionStorage.removeItem("fromDetails"); // important
+if (
+  email &&
+  otpVerified === "true" &&
+  detailsCompleted === "true" &&
+  fromDetails === "true"
+) {
+  sessionStorage.removeItem("fromDetails"); // 🔥 critical
   loginSection.classList.add("hidden");
   applicationSection.classList.remove("hidden");
-  welcomeText.textContent = `Welcome, ${name} (USN: ${usn})`;
+  welcomeText.textContent = `Welcome, ${email}`;
   loadCertificates();
-} 
-// ❌ Otherwise → show login page
-else {
-  loginSection.classList.remove("hidden");
-  applicationSection.classList.add("hidden");
 }
 
-// ================= HANDLE LOGIN =================
-loginForm.addEventListener("submit", async (e) => {
+/* ================= OTP SEND ================= */
+sendOtpBtn.addEventListener("click", async () => {
+  const emailVal = emailInput.value.trim();
+  if (!emailVal) return alert("Enter email");
+
+  const res = await fetch(`${API_BASE}/api/auth/send-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: emailVal }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) return alert(data.message);
+
+  otpBox.classList.remove("hidden");
+  loginMessage.textContent = "OTP sent to your email";
+});
+
+/* ================= OTP VERIFY ================= */
+document.getElementById("otp-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  loginMessage.textContent = "";
 
-  const nameInput = document.getElementById("name").value.trim();
-  const usnInput = document.getElementById("usn").value.trim();
-  const dob = document.getElementById("dob").value;
+  const emailVal = emailInput.value.trim();
+  const otp = otpInput.value.trim();
+  if (!otp) return alert("Enter OTP");
 
-  if (!nameInput || !usnInput || !dob) {
-    loginMessage.textContent = "Please fill all fields.";
-    loginMessage.className = "error";
-    return;
-  }
+  const res = await fetch(`${API_BASE}/api/auth/verify-otp`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: emailVal, otp }),
+  });
 
-  try {
-    const res = await fetch(`${API_BASE}/api/auth/student-login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usn: usnInput, dob }),
-    });
+  const data = await res.json();
+  if (!res.ok) return alert(data.message);
 
-    const data = await res.json();
+  localStorage.setItem("email", emailVal);
+  localStorage.setItem("otpVerified", "true");
 
-    if (!res.ok) {
-      loginMessage.textContent = data.message || "Login failed.";
-      loginMessage.className = "error";
+  window.location.href = "student-details.html";
+});
+
+/* ================= LOAD CERTIFICATES ================= */
+async function loadCertificates() {
+  certificateSelect.innerHTML = `<option value="">Select</option>`;
+  const res = await fetch(`${API_BASE}/api/certificates`);
+  const certs = await res.json();
+
+  certs.forEach((c) => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    certificateSelect.appendChild(opt);
+  });
+}
+
+/* ================= SHOW OTHER ================= */
+certificateSelect?.addEventListener("change", () => {
+  otherFields?.classList.toggle(
+    "hidden",
+    certificateSelect.value !== "Other"
+  );
+});
+
+/* ================= APPLY ================= */
+document
+  .getElementById("application-form")
+  ?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = localStorage.getItem("email");
+    const usn = localStorage.getItem("usn");
+
+    if (!email || !usn) {
+      alert("Session expired. Please login again.");
       return;
     }
 
-    // ✅ Save login info
-    localStorage.setItem("usn", usnInput);
-    localStorage.setItem("name", nameInput);
+    const payload = {
+      usn,
+      email,
+      certificateType: certificateSelect.value,
+      copyType: document.getElementById("copy-type").value,
+      copies: document.getElementById("copies").value,
+      otherReason: document.getElementById("other-reason")?.value || null,
+      otherDescription:
+        document.getElementById("other-description")?.value || null,
+    };
 
-    // ❗ Force details page next
-    localStorage.removeItem("detailsCompleted");
-
-    window.location.href = "student-details.html";
-  } catch (err) {
-    console.error(err);
-    loginMessage.textContent = "Something went wrong.";
-    loginMessage.className = "error";
-  }
-});
-
-// ================= LOAD CERTIFICATES =================
-async function loadCertificates() {
-  certificateSelect.innerHTML = `<option value="">Select a certificate</option>`;
-
-  try {
-    const res = await fetch(`${API_BASE}/api/certificates`);
-    const certs = await res.json();
-    certs.forEach((c) => {
-      const opt = document.createElement("option");
-      opt.value = c;
-      opt.textContent = c;
-      certificateSelect.appendChild(opt);
-    });
-  } catch (err) {
-    console.error(err);
-  }
-}
-
-// ================= APPLY FOR CERTIFICATE =================
-applicationForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  applicationMessage.textContent = "";
-
-  const certificateType = certificateSelect.value;
-  const copyType = document.getElementById("copy-type").value;
-  const email = document.getElementById("student-email").value.trim();
-
-  if (!certificateType || !copyType) {
-    applicationMessage.textContent = "Please select all fields.";
-    applicationMessage.className = "error";
-    return;
-  }
-
-  try {
     const res = await fetch(`${API_BASE}/api/applications`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        usn,
-        certificateType,
-        copyType,
-        email: email || null,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
+    if (!res.ok) return alert(data.message);
 
-    if (!res.ok) {
-      applicationMessage.textContent = data.message || "Failed to apply.";
-      applicationMessage.className = "error";
-      return;
-    }
-
-    applicationMessage.innerHTML = `
+    document.getElementById("application-message").innerHTML = `
       <p class="success">
-        Application submitted successfully!<br/>
-        <strong>Application ID:</strong> ${data.id}
+        ✅ Payment successful and application submitted successfully<br>
+        📧 Confirmation sent to your registered email
       </p>
     `;
-  } catch (err) {
-    console.error(err);
-    applicationMessage.textContent = "Something went wrong.";
-    applicationMessage.className = "error";
-  }
-});
+  });

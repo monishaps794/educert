@@ -1,14 +1,13 @@
-// student-details.js
 const API_BASE = "";
 
 const form = document.getElementById("details-form");
 const messageDiv = document.getElementById("details-message");
 
-const usn = localStorage.getItem("usn");
-const name = localStorage.getItem("name");
+const email = localStorage.getItem("email");
+const otpVerified = localStorage.getItem("otpVerified");
 
-// 🚫 Must login first
-if (!usn || !name) {
+// 🚫 MUST come from OTP
+if (!email || otpVerified !== "true") {
   window.location.href = "student.html";
 }
 
@@ -16,7 +15,8 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
   messageDiv.textContent = "";
 
-  const email = document.getElementById("email").value.trim();
+  const name = document.getElementById("name").value.trim();
+  const usn = document.getElementById("usn").value.trim();
   const branch = document.getElementById("branch").value.trim();
   const yearOfPassing = document.getElementById("year").value.trim();
   const address = document.getElementById("address").value.trim();
@@ -43,10 +43,11 @@ form.addEventListener("submit", async (e) => {
       return;
     }
 
-    // ✅ Mark details completed
+    // ✅ REQUIRED FLAGS (THIS WAS MISSING)
+    localStorage.setItem("usn", usn);
     localStorage.setItem("detailsCompleted", "true");
-    sessionStorage.setItem("fromDetails", "true"); 
-    // ✅ Go to certificate application page
+    sessionStorage.setItem("fromDetails", "true"); // 🔥 FIX
+
     window.location.href = "student.html";
   } catch (err) {
     console.error(err);

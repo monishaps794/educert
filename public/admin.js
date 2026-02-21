@@ -1,79 +1,67 @@
-// admin.js
+document.addEventListener("DOMContentLoaded", () => {
+  const API_BASE = "";
 
-// Same-origin:
-const API_BASE = "";
+  const adminLoginSection = document.getElementById("admin-login-section");
+  const adminLoginForm = document.getElementById("admin-login-form");
+  const adminUsernameInput = document.getElementById("admin-username");
+  const adminPasswordInput = document.getElementById("admin-password");
 
-const adminLoginSection = document.getElementById("admin-login-section");
-const adminLoginForm = document.getElementById("admin-login-form");
-const adminUsernameInput = document.getElementById("admin-username");
-const adminPasswordInput = document.getElementById("admin-password");
-const adminLoginMessage = document.getElementById("admin-login-message");
+  const adminDashboard = document.getElementById("admin-dashboard");
+  const adminMessage = document.getElementById("admin-message");
+  const applicationsTableBody = document.querySelector("#applications-table tbody");
 
-const adminDashboard = document.getElementById("admin-dashboard");
-const adminMessage = document.getElementById("admin-message");
-const applicationsTableBody = document.querySelector("#applications-table tbody");
-const refreshBtn = document.getElementById("refresh-btn");
+  const refreshBtn = document.getElementById("refresh-btn");
+  const filterSelect = document.getElementById("status-filter");
+  const downloadBtn = document.getElementById("download-btn");
 
-let isAdminLoggedIn = false;
+  let allApplications = [];
 
-// ================= ADMIN LOGIN =================
-adminLoginForm.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  adminLoginMessage.textContent = "";
-  adminLoginMessage.className = "";
+  /* ================= ADMIN LOGIN ================= */
+  adminLoginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const username = adminUsernameInput.value.trim();
-  const password = adminPasswordInput.value.trim();
-
-  if (!username || !password) {
-    adminLoginMessage.textContent = "Please enter username and password.";
-    adminLoginMessage.className = "error";
-    return;
-  }
-
-  try {
     const res = await fetch(`${API_BASE}/api/auth/admin-login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({
+        username: adminUsernameInput.value.trim(),
+        password: adminPasswordInput.value.trim(),
+      }),
     });
 
     const data = await res.json();
+    if (!res.ok) return alert(data.message);
 
-    if (!res.ok) {
-      adminLoginMessage.textContent = data.message || "Login failed.";
-      adminLoginMessage.className = "error";
-      return;
-    }
-
-    isAdminLoggedIn = true;
     adminLoginSection.classList.add("hidden");
     adminDashboard.classList.remove("hidden");
-    adminMessage.textContent = `Logged in as ${data.username}`;
     loadApplications();
-  } catch (err) {
-    console.error(err);
-    adminLoginMessage.textContent = "Something went wrong.";
-    adminLoginMessage.className = "error";
-  }
-});
+  });
 
-refreshBtn.addEventListener("click", () => {
-  if (isAdminLoggedIn) loadApplications();
-});
+  refreshBtn.addEventListener("click", loadApplications);
+  filterSelect.addEventListener("change", renderTable);
+  downloadBtn.addEventListener("click", downloadCSV);
 
-// ================= LOAD APPLICATIONS =================
-async function loadApplications() {
-  adminMessage.textContent = "Loading applications...";
-  applicationsTableBody.innerHTML = "";
-
-  try {
+  /* ================= LOAD APPLICATIONS ================= */
+  async function loadApplications() {
+    adminMessage.textContent = "Loading applications...";
     const res = await fetch(`${API_BASE}/api/admin/applications`);
-    const apps = await res.json();
+    allApplications = await res.json();
+    renderTable();
+  }
 
-    adminMessage.textContent = `Total applications: ${apps.length}`;
+  /* ================= FILTER + RENDER ================= */
+  function renderTable() {
+    applicationsTableBody.innerHTML = "";
+    const filter = filterSelect.value;
 
-    apps.forEach((app) => {
+    const filtered =
+      filter === "ALL"
+        ? allApplications
+        : allApplications.filter((a) => a.status === filter);
+
+    adminMessage.textContent = `Showing ${filtered.length} applications`;
+
+    filtered.forEach((app) => {
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
@@ -81,13 +69,17 @@ async function loadApplications() {
         <td>${app.usn}</td>
         <td>${app.certificateType}</td>
         <td>${app.copyType}</td>
-        <td>${app.email ?? ""}</td>
-        <td>${app.address ?? "—"}</td>
+        <td>${app.copies ?? 1}</td>
+        <td>${app.email}</td>
+        <td>${app.address ?? "-"}</td>
         <td>
-          <span class="badge ${app.status === "COMPLETED" ? "completed" : "pending"}">
-            ${app.status}
-          </span>
+          ${
+            app.certificateType === "Other"
+              ? `<strong>${app.otherReason ?? "-"}</strong><br><small>${app.otherDescription ?? ""}</small>`
+              : "-"
+          }
         </td>
+        <td><strong>${app.status}</strong></td>
         <td>${app.paymentStatus}</td>
         <td>
           ${
@@ -97,88 +89,124 @@ async function loadApplications() {
           }
         </td>
         <td>
-          <form class="complete-form" data-id="${app.id}">
-            <input type="email" name="email" placeholder="Email" required />
+          ${
+            app.status === "PENDING"
+              ? `
+              <form class="complete-form" data-id="${app.id}">
+                ${
+                  app.copyType === "Hardcopy"
+                    ? `
+                      <input type="hidden" name="copyType" value="Hardcopy" />
+                      <button type="submit">Mark as Posted</button>
+                    `
+                    : app.copyType === "Softcopy"
+                    ? `
+                      <input type="file" name="document" required />
+                      <input type="hidden" name="copyType" value="Softcopy" />
+                      <button type="submit">Upload & Send</button>
+                    `
+                    : `
+                      <input type="file" name="document" />
+                      <input type="hidden" name="copyType" value="Both" />
+                      <button type="submit">Upload & Send</button>
+                      <button type="button" class="mark-posted-btn" data-id="${app.id}">
+                        Mark as Posted
+                      </button>
+                    `
+                }
+              </form>
 
-            ${
-              app.copyType === "Hardcopy"
-                ? `
-                  <input type="hidden" name="copyType" value="Hardcopy" />
-                  <button type="submit">Mark as Posted</button>
-                `
-                : `
-                  <input type="file" name="document" required />
-                  <input type="hidden" name="copyType" value="${app.copyType}" />
-                  <button type="submit">Upload & Send</button>
-                `
-            }
-          </form>
+              <form class="reject-form" data-id="${app.id}">
+                <textarea name="reason" placeholder="Reason for rejection" required></textarea>
+                <button type="submit" style="background:#c62828;color:white;">Reject</button>
+              </form>
+            `
+              : "-"
+          }
         </td>
       `;
 
       applicationsTableBody.appendChild(tr);
     });
 
+    attachActionHandlers();
+  }
+
+  /* ================= ACTION HANDLERS ================= */
+  function attachActionHandlers() {
     document.querySelectorAll(".complete-form").forEach((form) => {
-      form.addEventListener("submit", handleCompleteFormSubmit);
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const appId = form.dataset.id;
+        const copyType = form.querySelector("input[name='copyType']").value;
+        const fileInput = form.querySelector("input[type='file']");
+
+        const fd = new FormData();
+        fd.append("copyType", copyType);
+        if (fileInput?.files?.length) fd.append("document", fileInput.files[0]);
+
+        const res = await fetch(`${API_BASE}/api/admin/applications/${appId}/complete`, {
+          method: "POST",
+          body: fd,
+        });
+
+        const data = await res.json();
+        if (!res.ok) return alert(data.message);
+        loadApplications();
+      });
     });
-  } catch (err) {
-    console.error(err);
-    adminMessage.textContent = "Failed to load applications.";
-    adminMessage.className = "error";
+
+    document.querySelectorAll(".mark-posted-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const fd = new FormData();
+        fd.append("copyType", "Hardcopy");
+
+        const res = await fetch(
+          `${API_BASE}/api/admin/applications/${btn.dataset.id}/complete`,
+          { method: "POST", body: fd }
+        );
+
+        const data = await res.json();
+        if (!res.ok) return alert(data.message);
+        loadApplications();
+      });
+    });
+
+    document.querySelectorAll(".reject-form").forEach((form) => {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const reason = form.querySelector("textarea").value.trim();
+        if (!reason) return alert("Enter rejection reason");
+
+        const res = await fetch(
+          `${API_BASE}/api/admin/applications/${form.dataset.id}/reject`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason }),
+          }
+        );
+
+        const data = await res.json();
+        if (!res.ok) return alert(data.message);
+        loadApplications();
+      });
+    });
   }
-}
 
-// ================= COMPLETE APPLICATION =================
-async function handleCompleteFormSubmit(e) {
-  e.preventDefault();
+  /* ================= DOWNLOAD CSV ================= */
+  function downloadCSV() {
+    let csv = "ID,USN,Certificate,CopyType,Copies,Email,Status,Payment\n";
+    allApplications.forEach((a) => {
+      csv += `${a.id},${a.usn},${a.certificateType},${a.copyType},${a.copies},${a.email},${a.status},${a.paymentStatus}\n`;
+    });
 
-  const form = e.target;
-  const appId = form.getAttribute("data-id");
-  const emailInput = form.querySelector('input[name="email"]');
-  const copyType = form.querySelector('input[name="copyType"]').value;
-  const fileInput = form.querySelector('input[name="document"]');
-
-  if (!emailInput.value) {
-    alert("Email is required.");
-    return;
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "applications.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
-
-  if (copyType !== "Hardcopy" && (!fileInput || !fileInput.files.length)) {
-    alert("Please upload the document.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("email", emailInput.value);
-  formData.append("copyType", copyType);
-
-  if (fileInput && fileInput.files.length) {
-    formData.append("document", fileInput.files[0]);
-  }
-
-  try {
-    const res = await fetch(
-      `${API_BASE}/api/admin/applications/${appId}/complete`,
-      { method: "POST", body: formData }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.message || "Failed to complete application.");
-      return;
-    }
-
-    alert(
-      copyType === "Hardcopy"
-        ? "Hardcopy marked as posted and confirmation email sent."
-        : "Document uploaded and emailed successfully."
-    );
-
-    loadApplications();
-  } catch (err) {
-    console.error(err);
-    alert("Something went wrong.");
-  }
-}
+});

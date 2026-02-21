@@ -30,32 +30,45 @@
     <!-- Admin Dashboard -->
     <div id="admin-dashboard" class="hidden">
       <h2>Applications</h2>
-      <p>
-        <a href="status.html" class="link-btn">Go to Status Tracking Page</a>
-      </p>
-      <button id="refresh-btn">Refresh List</button>
+<!--new controls -->
+      <div class="admin-controls">
+  <div class="left-controls">
+    <select id="status-filter">
+      <option value="ALL">All</option>
+      <option value="PENDING">Pending</option>
+      <option value="COMPLETED">Completed</option>
+      <option value="REJECTED">Rejected</option>
+    </select>
+  </div>
+
+  <div class="right-controls">
+    <button id="download-btn">Download CSV</button>
+    <button onclick="window.print()">Print</button>
+    <button id="refresh-btn">Refresh</button>
+  </div>
+</div>
+
       <div id="admin-message"></div>
 
       <div class="table-wrapper">
         <table id="applications-table">
           <thead>
             <tr>
-            <th>ID</th>
-            <th>USN</th>
-            <th>Certificate</th>
-            <th>Copy Type</th>
-            <th>Email</th>
-            <th>Address</th>
-            <th>Status</th>
-            <th>Payment</th>
-            <th>Uploaded Doc</th>
-            <th>Action</th>
-          </tr>
-
+              <th>ID</th>
+              <th>USN</th>
+              <th>Certificate</th>
+              <th>Copy Type</th>
+              <th>No. of Copies</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Reason (Other)</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>Uploaded Doc</th>
+              <th>Action</th>
+            </tr>
           </thead>
-          <tbody>
-            <!-- Filled dynamically -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
     </div>

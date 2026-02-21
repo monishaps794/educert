@@ -114,3 +114,28 @@ th {
 .link-btn:hover {
   background: #2980b9;
 }
+/* ===== ADMIN TOP CONTROLS ALIGNMENT ===== */
+.admin-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.left-controls select {
+  max-width: 220px;
+}
+
+.right-controls {
+  display: flex;
+  gap: 10px;
+}
+
+@media print {
+  .admin-controls,
+  button {
+    display: none !important;
+  }
+}
