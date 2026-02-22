@@ -50,87 +50,110 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ================= FILTER + RENDER ================= */
-  function renderTable() {
-    applicationsTableBody.innerHTML = "";
-    const filter = filterSelect.value;
+  /* ================= FILTER + SORT + RENDER ================= */
+function renderTable() {
+  applicationsTableBody.innerHTML = "";
+  const filter = filterSelect.value;
 
-    const filtered =
-      filter === "ALL"
-        ? allApplications
-        : allApplications.filter((a) => a.status === filter);
+  // ✅ STATUS PRIORITY: Pending → Completed → Rejected
+  const statusOrder = {
+    PENDING: 1,
+    COMPLETED: 2,
+    REJECTED: 3,
+  };
 
-    adminMessage.textContent = `Showing ${filtered.length} applications`;
+  // 1️⃣ Apply filter
+  let filtered =
+    filter === "ALL"
+      ? [...allApplications]
+      : allApplications.filter((a) => a.status === filter);
 
-    filtered.forEach((app) => {
-      const tr = document.createElement("tr");
+  // 2️⃣ Sort by status priority
+  filtered.sort(
+    (a, b) => statusOrder[a.status] - statusOrder[b.status]
+  );
 
-      tr.innerHTML = `
-        <td>${app.id}</td>
-        <td>${app.usn}</td>
-        <td>${app.certificateType}</td>
-        <td>${app.copyType}</td>
-        <td>${app.copies ?? 1}</td>
-        <td>${app.email}</td>
-        <td>${app.address ?? "-"}</td>
-        <td>
-          ${
-            app.certificateType === "Other"
-              ? `<strong>${app.otherReason ?? "-"}</strong><br><small>${app.otherDescription ?? ""}</small>`
-              : "-"
-          }
-        </td>
-        <td><strong>${app.status}</strong></td>
-        <td>${app.paymentStatus}</td>
-        <td>
-          ${
-            app.documentPath
-              ? `<a href="/uploads/${app.documentPath}" target="_blank">View</a>`
-              : "-"
-          }
-        </td>
-        <td>
-          ${
-            app.status === "PENDING"
-              ? `
-              <form class="complete-form" data-id="${app.id}">
-                ${
-                  app.copyType === "Hardcopy"
-                    ? `
-                      <input type="hidden" name="copyType" value="Hardcopy" />
-                      <button type="submit">Mark as Posted</button>
-                    `
-                    : app.copyType === "Softcopy"
-                    ? `
-                      <input type="file" name="document" required />
-                      <input type="hidden" name="copyType" value="Softcopy" />
-                      <button type="submit">Upload & Send</button>
-                    `
-                    : `
-                      <input type="file" name="document" />
-                      <input type="hidden" name="copyType" value="Both" />
-                      <button type="submit">Upload & Send</button>
-                      <button type="button" class="mark-posted-btn" data-id="${app.id}">
-                        Mark as Posted
-                      </button>
-                    `
-                }
-              </form>
+  adminMessage.textContent = `Showing ${filtered.length} applications`;
 
-              <form class="reject-form" data-id="${app.id}">
-                <textarea name="reason" placeholder="Reason for rejection" required></textarea>
-                <button type="submit" style="background:#c62828;color:white;">Reject</button>
-              </form>
-            `
-              : "-"
-          }
-        </td>
-      `;
+  // 3️⃣ Render rows
+  filtered.forEach((app) => {
+    const tr = document.createElement("tr");
 
-      applicationsTableBody.appendChild(tr);
-    });
+    tr.innerHTML = `
+      <td>${app.id}</td>
+      <td>${app.usn}</td>
+      <td>${app.certificateType}</td>
+      <td>${app.copyType}</td>
+      <td>${app.copies ?? 1}</td>
+      <td>${app.email}</td>
+      <td>${app.address ?? "-"}</td>
+      <td>
+        ${
+          app.certificateType === "Other"
+            ? `<strong>${app.otherReason ?? "-"}</strong><br>
+               <small>${app.otherDescription ?? ""}</small>`
+            : "-"
+        }
+      </td>
+      <td><strong>${app.status}</strong></td>
+      <td>${app.paymentStatus}</td>
+      <td>
+        ${
+          app.documentPath
+            ? `<a href="/uploads/${app.documentPath}" target="_blank">View</a>`
+            : "-"
+        }
+      </td>
+      <td>
+        ${
+          app.status === "PENDING"
+            ? `
+            <form class="complete-form" data-id="${app.id}">
+              ${
+                app.copyType === "Hardcopy"
+                  ? `
+                    <input type="hidden" name="copyType" value="Hardcopy" />
+                    <button type="submit">Mark as Posted</button>
+                  `
+                  : app.copyType === "Softcopy"
+                  ? `
+                    <input type="file" name="document" required />
+                    <input type="hidden" name="copyType" value="Softcopy" />
+                    <button type="submit">Upload & Send</button>
+                  `
+                  : `
+                    <input type="file" name="document" />
+                    <input type="hidden" name="copyType" value="Both" />
+                    <button type="submit">Upload & Send</button>
+                    <button
+                      type="button"
+                      class="mark-posted-btn"
+                      data-id="${app.id}"
+                    >
+                      Mark as Posted
+                    </button>
+                  `
+              }
+            </form>
 
-    attachActionHandlers();
-  }
+            <form class="reject-form" data-id="${app.id}">
+              <textarea name="reason" placeholder="Reason for rejection" required></textarea>
+              <button type="submit" style="background:#c62828;color:white;">
+                Reject
+              </button>
+            </form>
+          `
+            : "-"
+        }
+      </td>
+    `;
+
+    applicationsTableBody.appendChild(tr);
+  });
+
+  // Re-attach handlers (unchanged)
+  attachActionHandlers();
+}
 
   /* ================= ACTION HANDLERS ================= */
   function attachActionHandlers() {
